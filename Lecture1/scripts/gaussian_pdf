@@ -1,0 +1,25 @@
+#include "RooRealVar.h"
+#include "RooDataSet.h"
+#include "RooGaussian.h"
+#include "TCanvas.h"
+#include "RooPlot.h"
+#include "TAxis.h"
+using namespace RooFit;
+
+void gaussian_pdf(){
+    RooRealVar x("x", "x", -10, 10);
+    RooRealVar mean("mean", "mean of gaussian", 1, -10, 10);
+    RooRealVar sigma("sigma", "width of gaussian", 1, 0.1, 10);
+
+    # Building the distribution
+    RooGaussian gauss("gauss", "gaussian PDF", x, mean, sigma);
+
+    # Constructing plot
+    RooPlot *xframe = x.frame(Title("gaussian pdf "));
+
+    gauss.plotOn(xframe);
+
+    sigma.setVal(4);
+
+    gauss.plotOn(xframe, LineColor(kRed));
+}
