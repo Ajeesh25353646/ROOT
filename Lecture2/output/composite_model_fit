@@ -1,0 +1,89 @@
+#include "RooFit.h"
+#include "RooRealVar.h"
+#include "RooGaussian.h"
+#include "RooAddPdf.h"
+#include "RooDataSet.h"
+#include "RooWorkspace.h"
+#include "RooMinimizer.h"
+#include "RooFitResult.h"
+#include "RooPlot.h"
+#include "TCanvas.h"
+#include "TFile.h"
+
+using namespace RooFit;
+
+void composite_model_fit() {
+    // Create observable
+    RooRealVar x("x", "x", -20, 20);
+    
+    // Create parameters
+    RooRealVar mean("mean", "mean", 0);
+    RooRealVar s1("s1", "sigma1", 3.3);
+    RooRealVar s2("s2", "sigma2", 4, 3, 6);
+    RooRealVar f("f", "coefficient", 0.5, 0.3, 1);
+
+    // Create PDF components
+    RooGaussian gauss1("gauss1", "gaussian1", x, mean, s1);
+    RooGaussian gauss2("gauss2", "gaussian2", x, mean, s2);
+
+    // Create composite model
+    RooAddPdf model("model", "model", RooArgList(gauss1, gauss2), RooArgList(f));
+
+    // Generate dataset
+    RooDataSet* data = model.generate(x, 1000);
+
+    // Create workspace and save components
+    RooWorkspace w("w", "workspace");
+    w.import(model);
+    w.import(*data);
+    w.writeToFile("workspace_model.root");
+
+    // Construct likelihood
+    RooAbsReal* nll = model.createNLL(*data);
+
+    // Minimize likelihood
+    RooMinimizer minim(*nll);
+    minim.setVerbose(true);
+    minim.migrad();
+    
+    // Print initial parameters
+    f.Print();
+    mean.Print();
+    s1.Print();
+    s2.Print();
+
+    // HESSE errors
+    minim.setVerbose(false);
+    minim.hesse();
+    
+    // Print parameters with HESSE errors
+    f.Print();
+    mean.Print();
+    s1.Print();
+    s2.Print();
+
+    // MINOS errors for s2
+    minim.minos(s2);
+    
+    // Print final parameters
+    f.Print();
+    mean.Print();
+    s1.Print();
+    s2.Print();
+
+    // Save fit results
+    RooFitResult* result = minim.save();
+    result->Print("v");
+
+    // Plot correlation matrix
+    TCanvas* c1 = new TCanvas("c1", "Correlation Matrix", 800, 600);
+    result->correlationHist()->Draw("colz");
+    c1->SaveAs("correlation_matrix.png");
+
+    // Save correlation matrix to ROOT file
+    TFile output_file("correlation_matrix.root", "RECREATE");
+    result->correlationHist()->Write("correlationMatrix");
+    output_file.Close();
+
+}
+
