@@ -1,0 +1,8 @@
+{
+    "files.associations": {
+        "gaussian_pdf.C": "cpp",
+        "basics.C": "cpp",
+        "B0_LHCb_decay.C": "cpp",
+        "composite_model_fit.C": "cpp"
+    }
+}
